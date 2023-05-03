@@ -36,7 +36,7 @@ def start_server():
         y = executor.submit(handle_console)
 
         # Check if both threads are done
-        a, b = concurrent.futures.wait([x, y], return_when=concurrent.futures.ALL_COMPLETED)
+        concurrent.futures.wait([x, y], return_when=concurrent.futures.ALL_COMPLETED)
 
         executor.shutdown(wait=True)
 
@@ -120,19 +120,19 @@ def send_http_request():
     Send an HTTP request to the specified URL
     """
 
-    # if len(clients) == 0:
-    #     print("Nessun client connesso")
-    #     return
-    #
+    if len(clients) == 0:
+        print("Nessun client connesso")
+        return
+
     # client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
     # if client_address not in [client[1][1] for client in clients]:
     #     print("Client non trovato")
     #     return
 
-    url = 'https://finalspaceapi.com/api/v0/character/?limit=2'
+    url = 'https://marcorealacci.me'
     myobj = {
         'url': url,
-        'number_of_requests': 10
+        'number_of_requests': 10000
     }
 
     requests.post("http://127.0.0.1:80", json=myobj)

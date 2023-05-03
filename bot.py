@@ -23,7 +23,10 @@ def initialize_socket(port):
 
         request = client.recv(1024)
         string = request.decode('utf-8')
-        data = json.loads(string.split('\n')[9])
+
+        # get the body of the http request and parse it as json
+
+        data = json.loads(string[string.find('{'):string.find('}') + 1])
 
         for _ in range(data["number_of_requests"]):
             res = requests.get(data["url"])
