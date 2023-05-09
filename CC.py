@@ -59,7 +59,11 @@ def handle_console(e):
         print("0. Exit")
         scelta = int(input())
 
-        if scelta == 1:
+        if scelta == 0:
+            print("Exiting...")
+            e.set()
+            return
+        elif scelta == 1:
             get_all_clients()
         elif scelta == 2:
             send_message_to_all_clients()
@@ -67,10 +71,6 @@ def handle_console(e):
             send_message_to_specific_client()
         elif scelta == 4:
             send_http_request()
-        elif scelta == 0:
-            print("Exiting...")
-            e.set()
-            return
         else:
             print("Scelta non valida")
 
