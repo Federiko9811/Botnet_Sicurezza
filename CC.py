@@ -57,7 +57,8 @@ def handle_console(e):
         print("2. Invia messaggio a tutti i client")
         print("3. Invia messaggio a un client specifico")
         print("4. Effettua richieste http")
-        print("5. Mostra informazioni di un client")
+        print("5. Ferma attacco")
+        print("6. Mostra informazioni di un client")
         print("0. Exit")
         scelta = int(input())
 
@@ -74,6 +75,8 @@ def handle_console(e):
         elif scelta == 4:
             send_http_request()
         elif scelta == 5:
+            stop_attack()
+        elif scelta == 6:
             get_client_info()
         else:
             print("Scelta non valida")
@@ -140,6 +143,7 @@ def send_http_request():
         print("Nessun client connesso")
         return
 
+    # res = requests.post(f"http://{clients[0][1][0]}/attack", json=post_data)
     res = requests.post(f"http://{clients[0][1][0]}:8080/attack", json=post_data)
 
     print(res)
@@ -166,6 +170,7 @@ def get_client_info():
         print("Nessun client connesso")
         return
 
+    # res = requests.get(f"http://{clients[0][1][0]}/client-info")
     res = requests.get(f"http://{clients[0][1][0]}:8080/client-info")
 
     ram = res.json()['ram']
@@ -173,6 +178,12 @@ def get_client_info():
 
     print(f"RAM: {ram}GB")
     print(f"CPU: {cpu}")
+
+
+def stop_attack():
+    # res = requests.get(f"http://{clients[0][1][0]}/stop-attack")
+    res = requests.get(f"http://{clients[0][1][0]}:8080/stop-attack")
+    print(res)
 
 
 if __name__ == '__main__':
