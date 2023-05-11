@@ -59,7 +59,8 @@ class Bot(BaseHTTPRequestHandler):
 
 
 def run():
-    server = HTTPServer(('localhost', 80), Bot)
+    server = HTTPServer(('localhost', 8080), Bot)
+    # server = HTTPServer(('localhost', 80), Bot)
     server.serve_forever()
 
 
