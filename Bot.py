@@ -15,7 +15,6 @@ import requests
 server_address = ('10.0.2.15', 15200)
 # server_address = ('localhost', 15200)
 
-
 class Bot(BaseHTTPRequestHandler):
     event = Event()
 

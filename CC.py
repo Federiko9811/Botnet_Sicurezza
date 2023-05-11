@@ -109,7 +109,10 @@ def send_http_request():
         if scelta == 1:
             for url in urls:
                 for client in clients:
-                    requests.post(f"http://{client[1][0]}/attack", json={
+                    # requests.post(f"http://{client[1][0]}/attack", json={
+                    #     'url': url
+                    # })
+                    requests.post(f"http://{client[1][0]}:8080/attack", json={
                         'url': url
                     })
 
