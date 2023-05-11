@@ -167,7 +167,7 @@ def find_bot(path, method, json=None):
             for client in clients:
                 # res = requests.get(f"http://{client[1][0]}/{path}")
                 res = requests.get(f"http://{client[1][0]}:8080/{path}")
-                if path == "/client-info":
+                if path == "client-info":
                     print_client_info(client[1][0], res)
         elif method == "POST":
             for client in clients:
