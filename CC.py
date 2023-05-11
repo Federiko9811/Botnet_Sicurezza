@@ -163,14 +163,14 @@ def find_bot(path, method, json=None):
     if input("Voi utilizzare tutti i bot connessi? S/N: ") in ["S", "s"]:
         if method == "GET":
             for client in clients:
-                res = requests.get(f"http://{client[1][0]}/{path}")
-                # res = requests.get(f"http://{client[1][0]}:8080/{path}")
+                # res = requests.get(f"http://{client[1][0]}/{path}")
+                res = requests.get(f"http://{client[1][0]}:8080/{path}")
                 if path == "/client-info":
                     print_client_info(client[1][0], res)
         elif method == "POST":
             for client in clients:
-                requests.post(f"http://{client[1][0]}/{path}", json=json)
-                # requests.post(f"http://{client[1][0]}:8080/{path}", json=json)
+                # requests.post(f"http://{client[1][0]}/{path}", json=json)
+                requests.post(f"http://{client[1][0]}:8080/{path}", json=json)
     else:
         client_ip = input("Inserisci l'Ip del bot di cui vuoi sapere le info: ")
         if client_ip not in [client[1][0] for client in clients]:
@@ -178,13 +178,13 @@ def find_bot(path, method, json=None):
             return
         else:
             if method == "GET":
-                res = requests.get(f"http://{client_ip}/{path}")
-                # res = requests.get(f"http://{client_ip}:8080/{path}")
+                # res = requests.get(f"http://{client_ip}/{path}")
+                res = requests.get(f"http://{client_ip}:8080/{path}")
                 if path == "/client-info":
                     print_client_info(client_ip, res)
             elif method == "POST":
-                requests.post(f"http://{client_ip}/{path}", json=json)
-                # requests.post(f"http://{client_ip}:8080/{path}", json=json)
+                # requests.post(f"http://{client_ip}/{path}", json=json)
+                requests.post(f"http://{client_ip}:8080/{path}", json=json)
 
 
 if __name__ == '__main__':
