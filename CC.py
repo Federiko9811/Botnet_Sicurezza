@@ -61,7 +61,6 @@ def handle_console(e):
 
         if scelta == 0:
             print("Exiting...")
-            find_bot(path='/stop-attack', method="GET")
             e.set()
             return
         elif scelta == 1:
