@@ -12,8 +12,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import psutil
 import requests
 
-# server_address = ('10.0.2.15', 15200)
-server_address = ('localhost', 15200)
+server_address = ('10.0.2.15', 15200)
+# server_address = ('localhost', 15200)
 
 
 def next_free_port(p=80, max_port=65535):
