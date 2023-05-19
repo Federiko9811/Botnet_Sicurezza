@@ -12,45 +12,43 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 import psutil
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
 
 
-def next_free_port(p=80, max_port=65535):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    while p <= max_port:
-        try:
-            sock.bind(('', p))
-            sock.close()
-            return p
-        except OSError:
-            p += 1
-    raise IOError('Non ci sono porte disponibili')
+server_address = ('localhost', 15200)
+
+
+# def next_free_port(p=1024, max_port=65535):
+#     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     while p <= max_port:
+#         try:
+#             sock.bind(('', p))
+#             sock.close()
+#             return p
+#         except OSError:
+#             p += 1
+#     raise IOError('Non ci sono porte disponibili')
 
 
 def initialize_bot():
     print("Initializing bot...")
-
-    port = next_free_port()
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((server_address[0], server_address[1]))
-    s.send(json.dumps({
-        'ip': s.getsockname()[0],
-        'port': port
-    }).encode('utf-8'))
-    s.close()
-
     with ThreadPoolExecutor(max_workers=3) as ex:
-        x = ex.submit(run, port)
+        x = ex.submit(run)
 
         concurrent.futures.wait([x], return_when=concurrent.futures.ALL_COMPLETED)
 
         ex.shutdown(wait=True)
 
 
-def run(port):
-    server = HTTPServer(('', port), Bot)
+def run():
+    server = HTTPServer(('', 0), Bot)
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((server_address[0], server_address[1]))
+    s.send(json.dumps({
+        'ip': s.getsockname()[0],
+        'port': server.server_port
+    }).encode('utf-8'))
+    s.close()
     server.serve_forever()
 
 

