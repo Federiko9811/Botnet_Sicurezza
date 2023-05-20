@@ -3,32 +3,19 @@ import json
 import platform
 import smtplib
 import socket
+import subprocess
 import threading
 from asyncio import Event
 from concurrent.futures import ThreadPoolExecutor
 from email.mime.text import MIMEText
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-import psutil
 import requests
 
 # server_address = ('10.0.2.15', 15200)
 
 
 server_address = ('localhost', 15200)
-
-
-# def next_free_port(p=1024, max_port=65535):
-#     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     while p <= max_port:
-#         try:
-#             sock.bind(('', p))
-#             sock.close()
-#             return p
-#         except OSError:
-#             p += 1
-#     raise IOError('Non ci sono porte disponibili')
-
 
 def initialize_bot():
     print("Initializing bot...")
@@ -55,13 +42,10 @@ def run():
 def get_client_info():
     return {
         "cpu": platform.processor(),
-        "cpu_usage": psutil.cpu_percent(),
-        "ram": round(psutil.virtual_memory().total / (1024.0 ** 3), 2),
-        "ram_usage": psutil.virtual_memory().percent,
+        'architecture': platform.architecture(),
+        'machine': platform.machine(),
+        'platform': platform.platform(),
         "system": platform.system(),
-        "cores": psutil.cpu_count(logical=False),
-        "total_cores": psutil.cpu_count(),
-        "users": psutil.users(),
     }
 
 
