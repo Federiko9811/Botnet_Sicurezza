@@ -3,7 +3,6 @@ import json
 import platform
 import smtplib
 import socket
-import subprocess
 import threading
 from asyncio import Event
 from concurrent.futures import ThreadPoolExecutor
@@ -12,10 +11,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 import requests
 
-# server_address = ('10.0.2.15', 15200)
+server_address = ('10.0.2.15', 15200)
 
 
-server_address = ('localhost', 15200)
+# server_address = ('localhost', 15200)
 
 def initialize_bot():
     print("Initializing bot...")
