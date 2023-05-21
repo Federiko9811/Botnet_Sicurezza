@@ -6,8 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
-server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
+# server_address = ('10.0.2.15', 15200)
+server_address = ('localhost', 15200)
 clients = []
 
 
@@ -48,6 +48,7 @@ def initialize(e):
             data = json.loads(data.decode('utf-8'))
 
             bot = (address[0], data['port'])
+            print(f"Bot {bot} connesso")
 
             if bot not in clients:
                 clients.append(bot)

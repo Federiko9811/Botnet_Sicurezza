@@ -11,15 +11,15 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-server_address = ('10.0.2.15', 15200)
+# server_address = ('10.0.2.15', 15200)
 
 
-# server_address = ('localhost', 15200)
+server_address = ('localhost', 15200)
 
 
 def initialize_bot():
     print("Initializing bot...")
-    with ThreadPoolExecutor(max_workers=3) as ex:
+    with ThreadPoolExecutor(max_workers=1) as ex:
         x = ex.submit(run)
 
         concurrent.futures.wait([x], return_when=concurrent.futures.ALL_COMPLETED)
@@ -31,6 +31,10 @@ def run():
     server = HTTPServer(('', 0), Bot)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((server_address[0], server_address[1]))
+    s.send(json.dumps({
+        'ip': s.getsockname()[0],
+        'port': server.server_port
+    }).encode('utf-8'))
     s.close()
     server.serve_forever()
 
