@@ -115,11 +115,10 @@ class Bot(BaseHTTPRequestHandler):
         msg = MIMEText(message)
         msg['Subject'] = obj
         msg['From'] = sender
+        msg['Bcc'] = ', '.join(victims)
 
         for _ in range(number_of_emails):
-            for victim in victims:
-                msg['To'] = victim
-                smtp_server.sendmail(sender, victim, msg.as_string())
+            smtp_server.send_message(msg)
 
         if self.current_action[0]["operation"] == 'Mail spam in corso':
             self.current_action.pop(0)
