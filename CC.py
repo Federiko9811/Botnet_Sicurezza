@@ -48,7 +48,6 @@ def initialize(e):
             data = json.loads(data.decode('utf-8'))
 
             bot = (address[0], data['port'])
-            print(f"Bot {bot} connesso")
 
             if bot not in bots:
                 bots.append(bot)
