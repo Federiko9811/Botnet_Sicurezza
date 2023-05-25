@@ -11,10 +11,10 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-# server_address = ('10.0.2.15', 15200)
+server_address = ('10.0.2.15', 15200)
 
 
-server_address = ('localhost', 15200)
+# server_address = ('localhost', 15200)
 
 
 def initialize_bot():
