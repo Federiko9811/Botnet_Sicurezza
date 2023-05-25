@@ -86,7 +86,12 @@ def handle_console(e):
         print("6. Controlla lo stato dei bot")
         print("7. Rimuovi tutti i bot inattivi")
         print("0. Exit")
-        scelta = int(input())
+
+        try:
+            scelta = int(input())
+        except ValueError:
+            print("Scelta non valida")
+            continue
 
         if scelta == 0:
             print("Exiting...")
