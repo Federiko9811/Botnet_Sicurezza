@@ -22,8 +22,8 @@ def write_on_json_file():
 def initialize_bot_list():
     with open("bot-db.json", "r") as f:
         if data := f.read():
-            bots = json.loads(data)
-            for bot in bots:
+            bs = json.loads(data)
+            for bot in bs:
                 if check_bot_is_active(bot):
                     bots.append((bot[0], bot[1]))
     write_on_json_file()
