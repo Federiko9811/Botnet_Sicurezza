@@ -7,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 
 server_address = ('10.0.2.15', 15200)
+# server_address = ('127.0.0.1', 15200)
+
 bots = []
 
 
@@ -171,6 +173,7 @@ def print_client_info(client, res):
     """
     print(f"Client Ip: {client}")
     print(f"CPU: {res.json()['cpu']}")
+    print(f"Architecture: {res.json()['architecture']}")
     print(f"Machine: {res.json()['machine']}")
     print(f"Platform: {res.json()['platform']}")
     print(f"System: {res.json()['system']}")
